@@ -24,6 +24,19 @@ jobs:
       - name: Install dependencies
         run: uv sync
       
+      - name: Debug - Check environment variables
+        run: |
+          echo "GROQ_API_KEY is set: ${{ secrets.GROQ_API_KEY != '' }}"
+          echo "TWITTER_COOKIES_JSON is set: ${{ secrets.TWITTER_COOKIES_JSON != '' }}"
+          echo "DISCORD_WEBHOOK_URL is set: ${{ secrets.DISCORD_WEBHOOK_URL != '' }}"
+          if [ -n "$TWITTER_COOKIES_JSON" ]; then
+            echo "TWITTER_COOKIES_JSON length: ${#TWITTER_COOKIES_JSON}"
+          else
+            echo "TWITTER_COOKIES_JSON is empty!"
+          fi
+        env:
+          TWITTER_COOKIES_JSON: ${{ secrets.TWITTER_COOKIES_JSON }}
+      
       - name: Run bot
         id: bot
         env:
