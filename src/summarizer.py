@@ -123,13 +123,12 @@ def _split_into_posts(summary_text: str) -> List[str]:
     Returns:
         List[str]: 分割されたテキストのリスト
     """
-    # 期間ヘッダーを作成（その週の月曜0時〜日曜22時、JST）
+    # 期間ヘッダーを作成（その週の月曜0時〜現在、JST）
     now = datetime.now(JST)
     days_since_monday = now.weekday()
     monday = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
-    sunday = monday + timedelta(days=6, hours=22)
     
-    header = f"{monday.strftime('%Y/%m/%d')} - {sunday.strftime('%Y/%m/%d')}\nイキヅライブ！活動ログ\n\n"
+    header = f"{monday.strftime('%Y/%m/%d')} - {now.strftime('%Y/%m/%d')}\\nイキヅライブ！活動ログ\\n\\n"
     
     posts = []
     current_chunk = header
