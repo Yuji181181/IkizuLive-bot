@@ -3,42 +3,40 @@ name: Weekly Activity Log Post
 on:
   schedule:
     # 毎週日曜日 13:00 UTC (22:00 JST)
-    - cron: '0 13 * * 0'
-  
+    - cron: "0 13 * * 0"
+
   # 手動実行も可能
   workflow_dispatch:
 
 jobs:
   post-weekly-log:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-      
+          python-version: "3.12"
+
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      
+
       - name: Install dependencies
-        working-directory: ./IkizuLive-bot
         run: uv sync
-      
+
       - name: Run weekly bot
         id: bot_run
-        working-directory: ./IkizuLive-bot
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TWITTER_COOKIES_JSON: ${{ secrets.TWITTER_COOKIES_JSON }}
         run: uv run python main.py
         continue-on-error: true
-      
+
       - name: Notify Discord on Success
         if: steps.bot_run.outcome == 'success' && secrets.DISCORD_WEBHOOK_URL != ''
         uses: sarisia/actions-status-discord@v1
@@ -51,7 +49,7 @@ jobs:
           username: IkizuLive Bot
           ack_no_webhook: true
         continue-on-error: true
-      
+
       - name: Notify Discord on Failure
         if: steps.bot_run.outcome == 'failure' && secrets.DISCORD_WEBHOOK_URL != ''
         uses: sarisia/actions-status-discord@v1
@@ -61,12 +59,12 @@ jobs:
           title: 週次活動ログ投稿 - 失敗
           description: |
             イキヅライブ！の週次活動ログ投稿に失敗しました。
-            
+
             考えられる原因:
             - Cookie期限切れ
             - API制限
             - ネットワークエラー
-            
+
             対処方法:
             1. ワークフローログを確認
             2. Cookieを再取得してSecretsを更新
