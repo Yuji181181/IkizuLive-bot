@@ -6,17 +6,20 @@ IkizuLive Weekly Bot - ツイート収集モジュール
 
 import asyncio
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any
 
 from twikit import Client, TooManyRequests
 
 from src.config import TARGET_MEMBERS, MIN_WAIT_TIME, MAX_WAIT_TIME
 
+# 日本時間(JST)のタイムゾーン
+JST = timezone(timedelta(hours=9))
+
 
 async def collect_weekly_tweets(client: Client) -> List[Dict[str, Any]]:
     """
-    過去7日間のツイートを全メンバーから収集します。
+    その週の月曜0時から日曜22時までのツイートを全メンバーから収集します。
     
     Args:
         client: 初期化済みのtwikitクライアント
@@ -24,11 +27,21 @@ async def collect_weekly_tweets(client: Client) -> List[Dict[str, Any]]:
     Returns:
         List[Dict[str, Any]]: ツイートデータのリスト
     """
-    # 7日前の日付を計算
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=7)
+    # 現在時刻(JST)
+    now = datetime.now(JST)
     
-    print(f"\n収集期間: {start_date.strftime('%Y-%m-%d')} ~ {end_date.strftime('%Y-%m-%d')}")
+    # その週の月曜日0時を計算
+    # weekday(): 月曜=0, 日曜=6
+    days_since_monday = now.weekday()
+    monday = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # その週の日曜日22時を計算
+    sunday = monday + timedelta(days=6, hours=22)
+    
+    start_date = monday
+    end_date = sunday
+    
+    print(f"\n収集期間(JST): {start_date.strftime('%Y-%m-%d %H:%M')} ~ {end_date.strftime('%Y-%m-%d %H:%M')}")
     print(f"対象メンバー: {len(TARGET_MEMBERS)}人\n")
     
     all_tweets = []
@@ -75,10 +88,15 @@ async def _fetch_user_tweets(
     Returns:
         List[Dict[str, Any]]: ツイートデータのリスト
     """
+    # 終了日が未来の場合は現在時刻に制限
+    now = datetime.now(JST)
+    actual_end_date = min(end_date, now)
+    
     # 検索クエリ作成
     query = (
         f"from:{username} "
         f"since:{start_date.strftime('%Y-%m-%d')} "
+        f"until:{actual_end_date.strftime('%Y-%m-%d')} "
         f"include:replies"
     )
     

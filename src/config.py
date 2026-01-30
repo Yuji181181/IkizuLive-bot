@@ -78,8 +78,8 @@ SYSTEM_PROMPT = """あなたは「イキヅライブ！」（正式名称:イキ
 09/08 (のりこ): おばあちゃんの十八番について話した"""
 
 # レート制限設定(秒)
-MIN_WAIT_TIME = 5   # 最小待機時間
-MAX_WAIT_TIME = 10  # 最大待機時間
+MIN_WAIT_TIME = 180   # 最小待機時間
+MAX_WAIT_TIME = 180  # 最大待機時間
 
 # 投稿設定
 MAX_TWEET_LENGTH = 160  # 日本語全角文字数制限

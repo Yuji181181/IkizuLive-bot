@@ -5,12 +5,15 @@ Groq APIを使用して活動ログを生成します。
 """
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any
 
 from groq import Groq
 
 from src.config import GROQ_MODEL, SYSTEM_PROMPT, MAX_TWEET_LENGTH
+
+# 日本時間(JST)のタイムゾーン
+JST = timezone(timedelta(hours=9))
 
 
 def summarize_tweets(tweets: List[Dict[str, Any]]) -> List[str]:
@@ -120,10 +123,13 @@ def _split_into_posts(summary_text: str) -> List[str]:
     Returns:
         List[str]: 分割されたテキストのリスト
     """
-    # 期間ヘッダーを作成
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=7)
-    header = f"{start_date.strftime('%Y/%m/%d')} - {end_date.strftime('%Y/%m/%d')}\nイキヅライブ！活動ログ\n\n"
+    # 期間ヘッダーを作成（その週の月曜0時〜日曜22時、JST）
+    now = datetime.now(JST)
+    days_since_monday = now.weekday()
+    monday = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+    sunday = monday + timedelta(days=6, hours=22)
+    
+    header = f"{monday.strftime('%Y/%m/%d')} - {sunday.strftime('%Y/%m/%d')}\nイキヅライブ！活動ログ\n\n"
     
     posts = []
     current_chunk = header
