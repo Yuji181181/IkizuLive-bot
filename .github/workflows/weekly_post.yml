@@ -1,94 +1,55 @@
-name: 週次活動ログ投稿
-run-name: 週次活動ログ投稿（${{ github.actor }}）
+name: Weekly Activity Log Post
 
 on:
   schedule:
-    # 毎週日曜日 13:00 UTC (22:00 JST)
-    - cron: "0 13 * * 0"
-
-  # 手動実行も可能
+    - cron: '0 13 * * 0'
   workflow_dispatch:
 
 jobs:
   post-weekly-log:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
-
+      
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-
+          python-version: '3.12'
+      
       - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          uv --version
-
-      - name: Validate required secrets
-        shell: bash
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          TWITTER_COOKIES_JSON: ${{ secrets.TWITTER_COOKIES_JSON }}
-        run: |
-          set -euo pipefail
-          if [[ -z "${GROQ_API_KEY}" ]]; then
-            echo "✗ GROQ_API_KEY が未設定です" >&2
-            exit 1
-          fi
-          if [[ -z "${TWITTER_COOKIES_JSON}" ]]; then
-            echo "✗ TWITTER_COOKIES_JSON が未設定です" >&2
-            exit 1
-          fi
-          echo "✓ 必須シークレットを確認しました"
-
+        uses: astral-sh/setup-uv@v5
+      
       - name: Install dependencies
         run: uv sync
-
-      - name: Run weekly bot
-        id: bot_run
+      
+      - name: Run bot
+        id: bot
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TWITTER_COOKIES_JSON: ${{ secrets.TWITTER_COOKIES_JSON }}
         run: uv run python main.py
-
-      - name: Notify Discord on Success
-        if: steps.bot_run.outcome == 'success' && secrets.DISCORD_WEBHOOK_URL != ''
-        uses: sarisia/actions-status-discord@v1
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          status: success
-          title: 週次活動ログ投稿 - 成功
-          description: イキヅライブ！の週次活動ログが正常に投稿されました。
-          color: 0x2ecc71
-          username: IkizuLive Bot
-          ack_no_webhook: true
         continue-on-error: true
-
-      - name: Notify Discord on Failure
-        if: steps.bot_run.outcome == 'failure' && secrets.DISCORD_WEBHOOK_URL != ''
-        uses: sarisia/actions-status-discord@v1
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          status: failure
-          title: 週次活動ログ投稿 - 失敗
-          description: |
-            イキヅライブ！の週次活動ログ投稿に失敗しました。
-
-            考えられる原因:
-            - Cookie期限切れ
-            - API制限
-            - ネットワークエラー
-
-            対処方法:
-            1. ワークフローログを確認
-            2. Cookieを再取得してSecretsを更新
-            3. 手動で再実行
-          color: 0xe74c3c
-          username: IkizuLive Bot
-          ack_no_webhook: true
-        continue-on-error: true
+      
+      - name: Discord Success
+        if: steps.bot.outcome == 'success'
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -n "$WEBHOOK" ]; then
+            curl -X POST -H "Content-Type: application/json" \
+              -d '{"content":"✅ 週次活動ログ投稿が成功しました！"}' \
+              "$WEBHOOK"
+          fi
+      
+      - name: Discord Failure
+        if: steps.bot.outcome == 'failure'
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -n "$WEBHOOK" ]; then
+            curl -X POST -H "Content-Type: application/json" \
+              -d '{"content":"❌ 週次活動ログ投稿が失敗しました。ワークフローログを確認してください。"}' \
+              "$WEBHOOK"
+          fi
