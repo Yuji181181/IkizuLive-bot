@@ -25,6 +25,25 @@ jobs:
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          uv --version
+
+      - name: Validate required secrets
+        shell: bash
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TWITTER_COOKIES_JSON: ${{ secrets.TWITTER_COOKIES_JSON }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${GROQ_API_KEY}" ]]; then
+            echo "✗ GROQ_API_KEY が未設定です" >&2
+            exit 1
+          fi
+          if [[ -z "${TWITTER_COOKIES_JSON}" ]]; then
+            echo "✗ TWITTER_COOKIES_JSON が未設定です" >&2
+            exit 1
+          fi
+          echo "✓ 必須シークレットを確認しました"
 
       - name: Install dependencies
         run: uv sync
@@ -35,7 +54,6 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TWITTER_COOKIES_JSON: ${{ secrets.TWITTER_COOKIES_JSON }}
         run: uv run python main.py
-        continue-on-error: true
 
       - name: Notify Discord on Success
         if: steps.bot_run.outcome == 'success' && secrets.DISCORD_WEBHOOK_URL != ''
