@@ -28,7 +28,6 @@ jobs:
       
       - name: Install dependencies
         run: |
-          cd IkizuLive-bot
           uv sync
       
       - name: Run weekly bot
@@ -40,7 +39,6 @@ jobs:
           # Twitter Cookie (for twikit)
           TWITTER_COOKIES_JSON: ${{ secrets.TWITTER_COOKIES_JSON }}
         run: |
-          cd IkizuLive-bot
           uv run python main.py
         continue-on-error: true
       
