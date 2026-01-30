@@ -1,4 +1,5 @@
-name: Weekly Activity Log Post
+name: 週次活動ログ投稿
+run-name: 週次活動ログ投稿（${{ github.actor }}）
 
 on:
   schedule:
