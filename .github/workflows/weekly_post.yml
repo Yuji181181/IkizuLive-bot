@@ -27,10 +27,12 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       
       - name: Install dependencies
+        working-directory: ./IkizuLive-bot
         run: uv sync
       
       - name: Run weekly bot
         id: bot_run
+        working-directory: ./IkizuLive-bot
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TWITTER_COOKIES_JSON: ${{ secrets.TWITTER_COOKIES_JSON }}
@@ -38,7 +40,7 @@ jobs:
         continue-on-error: true
       
       - name: Notify Discord on Success
-        if: steps.bot_run.outcome == 'success'
+        if: steps.bot_run.outcome == 'success' && secrets.DISCORD_WEBHOOK_URL != ''
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -47,9 +49,11 @@ jobs:
           description: イキヅライブ！の週次活動ログが正常に投稿されました。
           color: 0x2ecc71
           username: IkizuLive Bot
+          ack_no_webhook: true
+        continue-on-error: true
       
       - name: Notify Discord on Failure
-        if: steps.bot_run.outcome == 'failure'
+        if: steps.bot_run.outcome == 'failure' && secrets.DISCORD_WEBHOOK_URL != ''
         uses: sarisia/actions-status-discord@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -69,3 +73,5 @@ jobs:
             3. 手動で再実行
           color: 0xe74c3c
           username: IkizuLive Bot
+          ack_no_webhook: true
+        continue-on-error: true
