@@ -27,21 +27,15 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       
       - name: Install dependencies
-        run: |
-          uv sync
+        run: uv sync
       
       - name: Run weekly bot
         id: bot_run
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TWITTER_COOKIES_JSON: ${{ secrets.TWITTER_COOKIES_JSON }}
-        run: |
-          uv run python main.py
+        run: uv run python main.py
         continue-on-error: true
-      
-      - name: Get current time (JST)
-        id: time
-        run: echo "jst=$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
       
       - name: Notify Discord on Success
         if: steps.bot_run.outcome == 'success'
@@ -49,27 +43,10 @@ jobs:
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
           status: success
-          title: "✅ 週次活動ログ投稿 - 成功"
-          description: "イキヅライブ！の週次活動ログが正常に投稿されました。"
+          title: 週次活動ログ投稿 - 成功
+          description: イキヅライブ！の週次活動ログが正常に投稿されました。
           color: 0x2ecc71
           username: IkizuLive Bot
-          fields: |
-            [
-              {
-                "name": "ワークフロー",
-                "value": "Weekly Activity Log Post",
-                "inline": true
-              },
-              {
-                "name": "実行時刻 (JST)",
-                "value": "${{ steps.time.outputs.jst }}",
-                "inline": true
-              },
-              {
-                "name": "詳細",
-                "value": "[ワークフロー実行を確認](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-              }
-            ]
       
       - name: Notify Discord on Failure
         if: steps.bot_run.outcome == 'failure'
@@ -77,32 +54,18 @@ jobs:
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
           status: failure
-          title: "❌ 週次活動ログ投稿 - 失敗"
-          description: "イキヅライブ！の週次活動ログ投稿に失敗しました。"
+          title: 週次活動ログ投稿 - 失敗
+          description: |
+            イキヅライブ！の週次活動ログ投稿に失敗しました。
+            
+            考えられる原因:
+            - Cookie期限切れ
+            - API制限
+            - ネットワークエラー
+            
+            対処方法:
+            1. ワークフローログを確認
+            2. Cookieを再取得してSecretsを更新
+            3. 手動で再実行
           color: 0xe74c3c
           username: IkizuLive Bot
-          fields: |
-            [
-              {
-                "name": "ワークフロー",
-                "value": "Weekly Activity Log Post",
-                "inline": true
-              },
-              {
-                "name": "実行時刻 (JST)",
-                "value": "${{ steps.time.outputs.jst }}",
-                "inline": true
-              },
-              {
-                "name": "考えられる原因",
-                "value": "• Cookie期限切れ\n• API制限\n• ネットワークエラー"
-              },
-              {
-                "name": "対処方法",
-                "value": "1. ワークフローログを確認\n2. Cookieを再取得してSecretsを更新\n3. 手動で再実行"
-              },
-              {
-                "name": "詳細ログ",
-                "value": "[ワークフロー実行を確認](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-              }
-            ]
