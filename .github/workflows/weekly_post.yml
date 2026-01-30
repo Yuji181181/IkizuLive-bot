@@ -32,6 +32,7 @@ jobs:
           uv sync
       
       - name: Run weekly bot
+        id: bot_run
         env:
           # Groq API
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
@@ -41,3 +42,76 @@ jobs:
         run: |
           cd IkizuLive-bot
           uv run python main.py
+        continue-on-error: true
+      
+      - name: Notify Discord on Success
+        if: steps.bot_run.outcome == 'success'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "✅ 週次活動ログ投稿 - 成功",
+                "description": "イキヅライブ！の週次活動ログが正常に投稿されました。",
+                "color": 3066993,
+                "fields": [
+                  {
+                    "name": "ワークフロー",
+                    "value": "Weekly Activity Log Post",
+                    "inline": true
+                  },
+                  {
+                    "name": "実行時刻 (JST)",
+                    "value": "'"$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S')"'",
+                    "inline": true
+                  },
+                  {
+                    "name": "詳細",
+                    "value": "[ワークフロー実行を確認](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+                  }
+                ],
+                "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"
+              }]
+            }' \
+            $DISCORD_WEBHOOK
+      
+      - name: Notify Discord on Failure
+        if: steps.bot_run.outcome == 'failure'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          curl -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "❌ 週次活動ログ投稿 - 失敗",
+                "description": "イキヅライブ！の週次活動ログ投稿に失敗しました。",
+                "color": 15158332,
+                "fields": [
+                  {
+                    "name": "ワークフロー",
+                    "value": "Weekly Activity Log Post",
+                    "inline": true
+                  },
+                  {
+                    "name": "実行時刻 (JST)",
+                    "value": "'"$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S')"'",
+                    "inline": true
+                  },
+                  {
+                    "name": "考えられる原因",
+                    "value": "• Cookie期限切れ\\n• API制限\\n• ネットワークエラー"
+                  },
+                  {
+                    "name": "対処方法",
+                    "value": "1. ワークフローログを確認\\n2. Cookieを再取得してSecretsを更新\\n3. 手動で再実行"
+                  },
+                  {
+                    "name": "詳細ログ",
+                    "value": "[ワークフロー実行を確認](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+                  }
+                ],
+                "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"'"
+              }]
+            }' \
+            $DISCORD_WEBHOOK
