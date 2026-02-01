@@ -128,7 +128,7 @@ def _split_into_posts(summary_text: str) -> List[str]:
     days_since_monday = now.weekday()
     monday = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
     
-    header = f"{monday.strftime('%Y/%m/%d')} - {now.strftime('%Y/%m/%d')}\\nイキヅライブ！活動ログ\\n\\n"
+    header = f"{monday.strftime('%Y/%m/%d')} - {now.strftime('%Y/%m/%d')}\nイキヅライブ！活動ログ\n\n"
     
     posts = []
     current_chunk = header
