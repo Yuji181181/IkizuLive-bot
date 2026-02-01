@@ -86,12 +86,8 @@ async def _fetch_user_tweets(
     actual_end_date = min(end_date, now)
     
     # 検索クエリ作成
-    query = (
-        f"from:{username} "
-        f"since:{start_date.strftime('%Y-%m-%d')} "
-        f"until:{actual_end_date.strftime('%Y-%m-%d')} "
-        f"include:replies"
-    )
+    # until パラメータを削除（404エラーの原因）
+    query = f"from:{username} since:{start_date.strftime('%Y-%m-%d')}"
     
     try:
         # ツイート検索

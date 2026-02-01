@@ -31,21 +31,28 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TWITTER_COOKIES_JSON: ${{ secrets.TWITTER_COOKIES_JSON }}
         run: |
+          set +e
           uv run python main.py 2>&1 | tee bot_output.log
-          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
-        continue-on-error: true
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          exit $EXIT_CODE
       
       - name: Get execution time
+        if: always()
         id: time
         run: |
           echo "jst=$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
           echo "utc=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
       
       - name: Extract error message
-        if: steps.bot.outcome == 'failure'
+        if: always()
         id: error
         run: |
-          ERROR_MSG=$(tail -n 20 bot_output.log | grep -E "✗|Error|Exception" | head -n 5 || echo "詳細はワークフローログを確認してください")
+          if [ -f bot_output.log ]; then
+            ERROR_MSG=$(tail -n 30 bot_output.log | grep -E "✗|⚠|Error|Exception|失敗" | tail -n 10 || echo "ログから詳細を確認してください")
+          else
+            ERROR_MSG="ログファイルが見つかりません"
+          fi
           echo "message<<EOF" >> $GITHUB_OUTPUT
           echo "$ERROR_MSG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -60,7 +67,7 @@ jobs:
             exit 0
           fi
           
-          if [ "${{ steps.bot.outcome }}" == "success" ]; then
+          if [ "${{ steps.bot.outputs.exit_code }}" == "0" ]; then
             # 成功時の通知
             curl -X POST -H "Content-Type: application/json" \
               -d '{
@@ -119,7 +126,7 @@ jobs:
                     },
                     {
                       "name": "🔧 考えられる原因",
-                      "value": "• Cookie期限切れ\n• API制限\n• ネットワークエラー\n• 認証エラー",
+                      "value": "• Cookie期限切れ\n• ツイートが0件（収集失敗）\n• API制限\n• ネットワークエラー",
                       "inline": false
                     },
                     {
