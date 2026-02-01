@@ -19,7 +19,7 @@ JST = timezone(timedelta(hours=9))
 
 async def collect_weekly_tweets(client: Client) -> List[Dict[str, Any]]:
     """
-    その週の月曜0時から現在までのツイートを全メンバーから収集します。
+    過去7日間（168時間）のツイートを全メンバーから収集します。
     
     Args:
         client: 初期化済みのtwikitクライアント
@@ -30,13 +30,9 @@ async def collect_weekly_tweets(client: Client) -> List[Dict[str, Any]]:
     # 現在時刻(JST)
     now = datetime.now(JST)
     
-    # その週の月曜日0時を計算
-    # weekday(): 月曜=0, 日曜=6
-    days_since_monday = now.weekday()
-    monday = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    start_date = monday
-    end_date = now  # 現在時刻まで
+    # 7日前（168時間前）を計算
+    start_date = now - timedelta(days=7)
+    end_date = now
     
     print(f"\n収集期間(JST): {start_date.strftime('%Y-%m-%d %H:%M')} ~ {end_date.strftime('%Y-%m-%d %H:%M')}")
     print(f"対象メンバー: {len(TARGET_MEMBERS)}人\n")
