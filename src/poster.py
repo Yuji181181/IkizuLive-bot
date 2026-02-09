@@ -47,7 +47,7 @@ async def post_thread(client: Client, posts: List[str]) -> bool:
                 return True
             except Exception as retry_error:
                 if retry < max_retries - 1:
-                    wait_time = (retry + 1) * 60  # 60秒, 120秒, 180秒
+                    wait_time = (retry + 1) * 90  # 90秒, 180秒, 270秒
                     print(f"  ⚠ 1/{len(posts)} エラー発生。{wait_time}秒後にリトライ... ({retry + 1}/{max_retries})")
                     await asyncio.sleep(wait_time)
                 else:
